@@ -79,25 +79,23 @@ class EyeBreakMain( QDesktopWidget ):
     self.__running.clear();
   #######################################################
   def __thread(self):
-    self.__running.set();                                 # Set the event on thread start
-    if self.__debug:                                      # If debug was set
-      delay = [5] * 2;                                    # Set delays to 5 seconds each
-    else:                                                 # Else
-      delay = [20 * 60, 20];                              # Set delays to 20 minutes and 20 seconds
-    i  = 0;                                               # Set index to 0
-    t0 = time.time();                                     # Get current time
-    while self.__running.is_set():                        # While the __running event is set
-      if (time.time()-t0) >= delay[i]:                    # If difference between current time and t0 >= delay time
-        if self.__visible:                                # If the window is currently visible
-          for label in self.labels :
-            label.hideSig.emit();                         # Hide the window
-        else:                                             # Else, it is hidden so
-          for label in self.labels :
-            label.showSig.emit();                         # Hide the window
+    self.__running.set();                                                       # Set the event on thread start
+    if self.__debug:                                                            # If debug was set
+      delay = [5] * 2;                                                          # Set delays to 5 seconds each
+    else:                                                                       # Else
+      delay = [20 * 60, 20];                                                    # Set delays to 20 minutes and 20 seconds
+    i  = 0;                                                                     # Set index to 0
+    t0 = time.time();                                                           # Get current time
+    while self.__running.is_set():                                              # While the __running event is set
+      if (time.time()-t0) >= delay[i]:                                          # If difference between current time and t0 >= delay time
+        if self.__visible:                                                      # If the window is currently visible
+          for label in self.labels: label.hideSig.emit();                       # Hide the window
+          Popen( cmd, stdout = DEVNULL, stderr = STDOUT );                      # Play notification sound
+        else:                                                                   # Else, it is hidden so
+          for label in self.labels: label.showSig.emit();                       # Hide the window
         self.__visible = not self.__visible;
-        Popen( cmd, stdout = DEVNULL, stderr = STDOUT );  # Play notification sound
-        t0 = time.time();                                 # Update t0
-        i  = (i + 1) % 2;                                 # Increment i ensuring it is always either 0 or 1
-      time.sleep(0.1);                                    # Sleep for 100 ms
+        t0 = time.time();                                                       # Update t0
+        i  = (i + 1) % 2;                                                       # Increment i ensuring it is always either 0 or 1
+      time.sleep(0.1);                                                          # Sleep for 100 ms
     for label in self.labels: label.close();
-    self.close();                                         # Close the window at the end of the thread
+    self.close();                                                               # Close the window at the end of the thread
