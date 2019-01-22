@@ -46,6 +46,7 @@ class EyeBreakLabel( QLabel ):
   def __hide(self, *args):
     self.hide();
 
+#################################################################
 class EyeBreakMain( QDesktopWidget ):
   labels = [];
   def __init__(self, text = None, debug = False):
@@ -64,11 +65,15 @@ class EyeBreakMain( QDesktopWidget ):
     self.__running = True;                                                   # Initialize threading event
     self.__visible = False;
     
-    self.thread = Thread(target = self.__thread)
-    self.thread.start()
+    if self.__debug:                                                            # If debug was set
+      self.delay = [5] * 2;                                                          # Set delays to 5 seconds each
+    else:                                                                       # Else
+      self.delay = [20 * 60, 20];                                                    # Set delays to 20 minutes and 20 seconds
+    self.i  = 0;                                                                     # Set index to 0
+    self.t0 = time.time();                                                           # Get current time
 
     self.timer = QTimer()
-    self.timer.timeout.connect(lambda: None)
+    self.timer.timeout.connect( self.toggleScreen )
     self.timer.start(100)
   #####################################################
   def check_screens(self):
@@ -85,34 +90,20 @@ class EyeBreakMain( QDesktopWidget ):
         self.labels.append( EyeBreakLabel(x, y, text = self.__text ) );         # Create a new label and append to the labels attribute
       else:                                                                     # Else
         self.labels[i].move(x, y);                                              # Just move the ith label to ith screen
+  #######################################################
+  def toggleScreen(self, *args):
+    if (time.time()-self.t0) >= self.delay[ self.i ]:                                  # If difference between current time and t0 >= delay time
+      self.check_screens();
+      if self.__visible:                                                      # If the window is currently visible
+        for label in self.labels: label.hideSig.emit();                       # Hide the window
+        Popen( cmd, stdout = DEVNULL, stderr = STDOUT );                      # Play notification sound
+      else:                                                                   # Else, it is hidden so
+        for label in self.labels: label.showSig.emit();                       # Hide the window 
+      self.__visible = not self.__visible;    
+      self.t0 = time.time();                                                       # Update t0
+      self.i  = (self.i + 1) % 2;                                                       # Increment i ensuring it is always either 0 or 1
   #######################################################  
   def __exit_gracefully(self, *args):
-    print( 'stopping' );
     self.__running = False;
     self.timer.stop();
     QApplication.quit();
-  #######################################################
-  def __thread(self):
-    if self.__debug:                                                            # If debug was set
-      delay = [5] * 2;                                                          # Set delays to 5 seconds each
-    else:                                                                       # Else
-      delay = [20 * 60, 20];                                                    # Set delays to 20 minutes and 20 seconds
-    i  = 0;                                                                     # Set index to 0
-    t0 = time.time();                                                           # Get current time
-    while self.__running:                                              # While the __running event is set
-      if (time.time()-t0) >= delay[i]:                                          # If difference between current time and t0 >= delay time
-        self.__toggleScreen();
-        t0 = time.time();                                                       # Update t0
-        i  = (i + 1) % 2;                                                       # Increment i ensuring it is always either 0 or 1
-      time.sleep(0.1);                                                          # Sleep for 100 ms
-    for label in self.labels: label.close();
-    self.close();                                                               # Close the window at the end of the thread
-  #######################################################
-  def __toggleScreen(self, *args):
-    self.check_screens();
-    if self.__visible:                                                      # If the window is currently visible
-      for label in self.labels: label.hideSig.emit();                       # Hide the window
-      Popen( cmd, stdout = DEVNULL, stderr = STDOUT );                      # Play notification sound
-    else:                                                                   # Else, it is hidden so
-      for label in self.labels: label.showSig.emit();                       # Hide the window 
-    self.__visible = not self.__visible;

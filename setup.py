@@ -8,7 +8,7 @@ setuptools.setup(
   url          = "https://github.com/kwodzicki/makemkv_to_mp4",
   author       = "Kyle R. Wodzicki",
   author_email = "krwodzicki@gmail.com",
-  version      = "0.0.2",
+  version      = "0.0.2b",
   packages     = setuptools.find_packages(),
   install_requires = [ "PyQt5" ],
   scripts=['bin/EyeBreak'],
