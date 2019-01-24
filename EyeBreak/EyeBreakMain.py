@@ -34,6 +34,7 @@ class EyeBreakLabel( QLabel ):
     self.setFont( QFont('SansSerif', 48) );                                     # Set font an font size
     self.setStyleSheet("background-color : black; color : gray;");              # Set background to black and text color to gray
     self.setWindowFlags( Qt.FramelessWindowHint );
+    self.setWindowFlags( Qt.WindowStaysOnTopHint );
     self.move( x, y );                                                          # Move label to given screen
     
     self.showSig.connect(self.__show);                                          # Connect __showSig signal to the __show method
