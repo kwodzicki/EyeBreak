@@ -33,6 +33,7 @@ class EyeBreakLabel( QLabel ):
     self.setAlignment( Qt.AlignCenter );                                        # Align text to middle of screen
     self.setFont( QFont('SansSerif', 48) );                                     # Set font an font size
     self.setStyleSheet("background-color : black; color : gray;");              # Set background to black and text color to gray
+    self.setWindowFlags( Qt.FramelessWindowHint );
     self.move( x, y );                                                          # Move label to given screen
     
     self.showSig.connect(self.__show);                                          # Connect __showSig signal to the __show method
@@ -40,11 +41,12 @@ class EyeBreakLabel( QLabel ):
   ##########################################
   @pyqtSlot()
   def __show(self, *args):
-    self.showFullScreen();
+    self.showMaximized();
   ##########################################
   @pyqtSlot()
   def __hide(self, *args):
-    self.hide();
+#    self.showNormal()
+    self.close();
 
 #################################################################
 class EyeBreakMain( QDesktopWidget ):
@@ -80,24 +82,20 @@ class EyeBreakMain( QDesktopWidget ):
     '''
     Method for creating EyeBreakLabel for each screen
     '''
+    labels  = [];
     nScreen = self.screenCount();                                               # Number of screens available
-    while len(self.labels) > nScreen:                                           # While there are more labels than screens
-      self.labels.pop().close();                                                # Pop off a label and close it
     for i in range( nScreen ):                                                  # Iterate over the number of screens
       x, y, height, width = self.availableGeometry(i).getRect();                # Get geometry of the ith screen
-      nLabels = len(self.labels);
-      if (nLabels < i) or (nLabels == 0):                                                  # If there are NOT enough labels
-        self.labels.append( EyeBreakLabel(x, y, text = self.__text ) );         # Create a new label and append to the labels attribute
-      else:                                                                     # Else
-        self.labels[i].move(x, y);                                              # Just move the ith label to ith screen
+      labels.append( EyeBreakLabel(x, y, text = self.__text ) );         # Create a new label and append to the labels attribute
+    return labels;
   #######################################################
   def toggleScreen(self, *args):
     if (time.time()-self.t0) >= self.delay[ self.i ]:                                  # If difference between current time and t0 >= delay time
-      self.check_screens();
       if self.__visible:                                                      # If the window is currently visible
         for label in self.labels: label.hideSig.emit();                       # Hide the window
         Popen( cmd, stdout = DEVNULL, stderr = STDOUT );                      # Play notification sound
       else:                                                                   # Else, it is hidden so
+        self.labels = self.check_screens();
         for label in self.labels: label.showSig.emit();                       # Hide the window 
       self.__visible = not self.__visible;    
       self.t0 = time.time();                                                       # Update t0

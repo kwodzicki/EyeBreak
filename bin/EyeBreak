@@ -3,6 +3,7 @@ import sys, signal;
 from PyQt5.QtWidgets import QApplication;
 from EyeBreak.EyeBreakMain import EyeBreakMain;
 
+QApplication.setQuitOnLastWindowClosed(False)
 app  = QApplication(sys.argv);
 inst = EyeBreakMain( debug = len(sys.argv) > 1 );
 
