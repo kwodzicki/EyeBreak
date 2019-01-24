@@ -15,18 +15,22 @@ def darwin_install():
   blddir = "/tmp/2020_build";
   wrkdir = os.path.join( blddir, "work" );
   dstdir = os.path.join( blddir, "dist" );
-  icndir = os.path.join( topdir, "icons" );
+  icndir = os.path.join( topdir, "icons.iconset" );
   appdir = os.path.join( os.path.expanduser("~"), "Applications" );
   src    = os.path.join( dstdir, "{}.app".format(name) );
-  dst    = os.path.join( appdir, "{}.app".foramt(name) );
+  dst    = os.path.join( appdir, "{}.app".format(name) );
   if not os.path.isdir(wrkdir): os.makedirs( wrkdir );
   if not os.path.isdir(dstdir): os.makedirs( dstdir );
-  cmd = ["pyinstaller", "-ywF",
-         "--distpath", dstdir,
-         "--workpath", wrkdir,
-         "--specpath", blddir,
-         "--name",     name,
-         "-i",         icon,
+
+  cmd  = ["iconutil", "-c", "icns", icndir];
+  proc = Popen( cmd );
+  proc.communicate( )
+  cmd  = ["pyinstaller", "-ywF",
+          "--distpath", dstdir,
+          "--workpath", wrkdir,
+          "--specpath", blddir,
+          "--name",     name,
+          "-i",         icon,
          script]
   proc = Popen( cmd );
   proc.communicate();
