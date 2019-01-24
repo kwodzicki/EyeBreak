@@ -19,10 +19,10 @@ def darwin_install():
   appdir = os.path.join( os.path.expanduser("~"), "Applications" );
   src    = os.path.join( dstdir, "{}.app".format(name) );
   dst    = os.path.join( appdir, "{}.app".format(name) );
+  icon   = os.path.join( blddir, "icons.icns" );
   if not os.path.isdir(wrkdir): os.makedirs( wrkdir );
   if not os.path.isdir(dstdir): os.makedirs( dstdir );
-
-  cmd  = ["iconutil", "-c", "icns", icndir];
+  cmd  = ["iconutil", "-c", "icns", "-o", icon, icndir];
   proc = Popen( cmd );
   proc.communicate( )
   cmd  = ["pyinstaller", "-ywF",
