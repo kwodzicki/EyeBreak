@@ -5,7 +5,6 @@ from EyeBreak.EyeBreakMain import EyeBreakMain;
 
 QApplication.setQuitOnLastWindowClosed(False)
 app  = QApplication(sys.argv);
-#inst = EyeBreakMain( debug = len(sys.argv) > 1 );
-inst = EyeBreakMain( debug = True );
+inst = EyeBreakMain( debug = len(sys.argv) > 1 );
 res  = app.exec_();
 sys.exit( res );
