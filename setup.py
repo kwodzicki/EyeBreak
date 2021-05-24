@@ -16,8 +16,8 @@ def darwin_install():
   dstdir = os.path.join( blddir, "dist" );
   icndir = os.path.join( topdir, "icons.iconset" );
   appdir = os.path.join( os.path.expanduser("~"), "Applications" );
-  src    = os.path.join( dstdir, "{}.app".format(name) );
-  dst    = os.path.join( appdir, "{}.app".format(name) );
+  src    = os.path.join( dstdir, "{}.app".format(NAME) );
+  dst    = os.path.join( appdir, "{}.app".format(NAME) );
   icon   = os.path.join( blddir, "icons.icns" );
   if not os.path.isdir(wrkdir): os.makedirs( wrkdir );
   if not os.path.isdir(dstdir): os.makedirs( dstdir );
