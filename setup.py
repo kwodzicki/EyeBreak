@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import os, sys, shutil;
-from subprocess import Popen;
-from setuptools import setup;
-import setuptools;
+import os, sys, shutil
+from subprocess import Popen
+from setuptools import setup, find_packages
 
 # Set up app name and other info
-name    = "20-20-20 EyeBreak";
+NAME    = "EyeBreak";
 script  = "bin/EyeBreak";
 require = ["PyQt5"]
 if sys.platform == 'darwin': require.append( 'pyinstaller' );
@@ -29,7 +28,7 @@ def darwin_install():
           "--distpath", dstdir,
           "--workpath", wrkdir,
           "--specpath", blddir,
-          "--name",     name,
+          "--name",     NAME,
           "-i",         icon,
          script]
   proc = Popen( cmd );
@@ -41,14 +40,14 @@ def darwin_install():
 
 # Move the app into place in the user's application directory
 
-setuptools.setup(
-  name             = name,
+setup(
+  name             = NAME,
   description      = "A GUI program that reminds you to take an eye break",
   url              = "https://github.com/kwodzicki/EyeBreak",
   author           = "Kyle R. Wodzicki",
   author_email     = "krwodzicki@gmail.com",
-  version          = "0.0.3",
-  packages         = setuptools.find_packages(),
+  version          = "0.0.4",
+  packages         = find_packages(),
   install_requires = require,
   scripts          = [script],
   zip_save         = False,
