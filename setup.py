@@ -1,41 +1,47 @@
 #!/usr/bin/env python
 import os, sys, shutil
 from subprocess import Popen
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, convert_path
 
 # Set up app name and other info
-NAME    = "EyeBreak";
-script  = "bin/EyeBreak";
+NAME    = "EyeBreak"
+script  = "bin/EyeBreak"
 require = ["PyQt5"]
-if sys.platform == 'darwin': require.append( 'pyinstaller' );
+if sys.platform == 'darwin': require.append( 'pyinstaller' )
+
+main_ns = {}
+ver_path = convert_path( os.path.join( NAME, 'version.py' ) )
+with open(ver_path, 'r') as ver_file:
+  exec( ver_file.read(), main_ns )
 
 def darwin_install():
-  topdir = os.path.dirname(os.path.realpath(__file__));
-  blddir = "/tmp/2020_build";
-  wrkdir = os.path.join( blddir, "work" );
-  dstdir = os.path.join( blddir, "dist" );
-  icndir = os.path.join( topdir, "icons.iconset" );
-  appdir = os.path.join( os.path.expanduser("~"), "Applications" );
-  src    = os.path.join( dstdir, "{}.app".format(NAME) );
-  dst    = os.path.join( appdir, "{}.app".format(NAME) );
-  icon   = os.path.join( blddir, "icons.icns" );
-  if not os.path.isdir(wrkdir): os.makedirs( wrkdir );
-  if not os.path.isdir(dstdir): os.makedirs( dstdir );
-  cmd  = ["iconutil", "-c", "icns", "-o", icon, icndir];
-  proc = Popen( cmd );
+  topdir = os.path.dirname(os.path.realpath(__file__))
+  blddir = "/tmp/2020_build"
+  wrkdir = os.path.join( blddir, "work" )
+  dstdir = os.path.join( blddir, "dist" )
+  icndir = os.path.join( topdir, "icons.iconset" )
+  appdir = os.path.join( os.path.expanduser("~"), "Applications" )
+  src    = os.path.join( dstdir, "{}.app".format(NAME) )
+  dst    = os.path.join( appdir, "{}.app".format(NAME) )
+  icon   = os.path.join( blddir, "icons.icns" )
+  if not os.path.isdir(wrkdir): os.makedirs( wrkdir )
+  if not os.path.isdir(dstdir): os.makedirs( dstdir )
+  cmd  = ["iconutil", "-c", "icns", "-o", icon, icndir]
+  proc = Popen( cmd )
   proc.communicate( )
-  cmd  = ["pyinstaller", "-ywF",
+  cmd  = ["pyinstaller", "--onefile", "--noconfirm",  "--windowed",
           "--distpath", dstdir,
           "--workpath", wrkdir,
           "--specpath", blddir,
           "--name",     NAME,
-          "-i",         icon,
+          "--icon",     icon,
          script]
-  proc = Popen( cmd );
-  proc.communicate();
-  if os.path.isdir( dst ): shutil.rmtree( dst );
-  shutil.move( src, appdir );
-  shutil.rmtree( blddir );
+
+  proc = Popen( cmd )
+  proc.communicate()
+  if os.path.isdir( dst ): shutil.rmtree( dst )
+  shutil.move( src, appdir )
+  shutil.rmtree( blddir )
 
 
 # Move the app into place in the user's application directory
@@ -46,11 +52,11 @@ setup(
   url              = "https://github.com/kwodzicki/EyeBreak",
   author           = "Kyle R. Wodzicki",
   author_email     = "krwodzicki@gmail.com",
-  version          = "0.0.4",
+  version          = main_ns['__version__'],
   packages         = find_packages(),
   install_requires = require,
   scripts          = [script],
-  zip_save         = False,
-);
+  zip_safe         = False,
+)
 
-if sys.platform == 'darwin': darwin_install();
+if sys.platform == 'darwin': darwin_install()
