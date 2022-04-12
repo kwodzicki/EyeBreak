@@ -5,8 +5,14 @@ from setuptools import setup, find_packages, convert_path
 
 # Set up app name and other info
 NAME    = "EyeBreak"
-script  = "bin/EyeBreak"
-require = ["PyQt5"]
+DESC    = "A GUI program that reminds you to take an eye break"
+URL     = "https://github.com/kwodzicki/EyeBreak"
+AUTH    = "Kyle R. Wodzicki"
+EMAIL   = "krwodzicki@gmail.com"
+
+SCRIPT  = "bin/EyeBreak"
+REQUIRE = ["PyQt5"]
+
 if sys.platform == 'darwin': require.append( 'pyinstaller' )
 
 main_ns = {}
@@ -35,7 +41,7 @@ def darwin_install():
           "--specpath", blddir,
           "--name",     NAME,
           "--icon",     icon,
-         script]
+         SCRIPT]
 
   proc = Popen( cmd )
   proc.communicate()
@@ -47,16 +53,18 @@ def darwin_install():
 # Move the app into place in the user's application directory
 
 setup(
-  name             = NAME,
-  description      = "A GUI program that reminds you to take an eye break",
-  url              = "https://github.com/kwodzicki/EyeBreak",
-  author           = "Kyle R. Wodzicki",
-  author_email     = "krwodzicki@gmail.com",
-  version          = main_ns['__version__'],
-  packages         = find_packages(),
-  install_requires = require,
-  scripts          = [script],
-  zip_safe         = False,
+  name                 = NAME,
+  description          = DESC,
+  url                  = URL,
+  author               = AUTH,
+  author_email         = EMAIL,
+  version              = main_ns['__version__'],
+  include_package_data = True,
+  packages             = find_packages(),
+  package_data         = {'' : ['trayicon.jpg']},
+  install_requires     = REQUIRE,
+  scripts              = [SCRIPT],
+  zip_safe             = False,
 )
 
 if sys.platform == 'darwin': darwin_install()
