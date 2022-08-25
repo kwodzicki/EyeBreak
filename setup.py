@@ -13,7 +13,7 @@ EMAIL   = "krwodzicki@gmail.com"
 SCRIPT  = "bin/EyeBreak"
 REQUIRE = ["PyQt5"]
 
-if sys.platform == 'darwin': require.append( 'pyinstaller' )
+if sys.platform == 'darwin': REQUIRE.append( 'pyinstaller' )
 
 main_ns = {}
 ver_path = convert_path( os.path.join( NAME, 'version.py' ) )
