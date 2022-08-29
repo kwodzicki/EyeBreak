@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import sys
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
 from EyeBreak.EyeBreakMain import EyeBreakTray
 
 QApplication.setQuitOnLastWindowClosed(False)
 app  = QApplication(sys.argv)
 inst = EyeBreakTray( app, debug = len(sys.argv) > 1 )
-res  = app.exec_()
+#inst = EyeBreakTray( app, debug = True )
+res  = app.exec()
 sys.exit( res )

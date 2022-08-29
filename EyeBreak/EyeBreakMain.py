@@ -1,11 +1,15 @@
 import os, json, time, signal, sys
 
+from datetime import datetime
+
 from threading       import Lock
 from subprocess      import check_call, Popen, STDOUT, DEVNULL
 
-from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QLabel, QAction
-from PyQt5.QtGui     import QIcon, QFont
-from PyQt5.QtCore    import pyqtSignal, pyqtSlot, Qt, QThread, QTimer
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QLabel
+from PySide6.QtGui     import QIcon, QFont, QAction
+from PySide6.QtCore    import Qt, QThread, QTimer
+from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Slot as pyqtSlot
 
 if sys.platform == 'linux':
   cmd = ['paplay', '/usr/share/sounds/gnome/default/alerts/drip.ogg']
@@ -65,8 +69,17 @@ class EyeBreakTray( QSystemTrayIcon ):
     '''
 
     super().__init__()
-    icon = os.path.dirname( os.path.realpath(__file__) )
+    try:
+      icon = sys._MEIPASS
+    except:
+      icon = os.path.dirname( os.path.realpath(__file__) )
     icon = os.path.join( icon, 'trayicon.jpg' )
+    with open( '/Users/kwodzicki/eyebreak.txt', 'w') as oid:
+      oid.write( str(datetime.now()) )
+      oid.write( os.linesep )
+      oid.write( icon )
+
+    #icon = os.path.join( icon, 'trayicon.png' )
     self.setIcon( QIcon(icon) )
     self.setVisible(True)
 
@@ -112,6 +125,8 @@ class EyeBreakTray( QSystemTrayIcon ):
     self.timer = QTimer()
     self.timer.timeout.connect( self.toggleScreen )
     self.timer.start(500)
+
+    self.show()
 
   def _addDisplay( self, screen ):
     """

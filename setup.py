@@ -10,8 +10,9 @@ URL     = "https://github.com/kwodzicki/EyeBreak"
 AUTH    = "Kyle R. Wodzicki"
 EMAIL   = "krwodzicki@gmail.com"
 
-SCRIPT  = "bin/EyeBreak"
-REQUIRE = ["PyQt5"]
+SCRIPT  = os.path.join( "bin", NAME )
+
+REQUIRE = ["PySide6"]
 
 if sys.platform == 'darwin': REQUIRE.append( 'pyinstaller' )
 
@@ -21,7 +22,8 @@ with open(ver_path, 'r') as ver_file:
   exec( ver_file.read(), main_ns )
 
 def darwin_install():
-  topdir = os.path.dirname(os.path.realpath(__file__))
+  topdir = os.path.dirname( os.path.abspath( __file__ ) )
+  tray   = os.path.join( topdir, NAME, 'trayicon.jpg' )
   blddir = "/tmp/2020_build"
   wrkdir = os.path.join( blddir, "work" )
   dstdir = os.path.join( blddir, "dist" )
@@ -41,14 +43,17 @@ def darwin_install():
           "--specpath", blddir,
           "--name",     NAME,
           "--icon",     icon,
+          "--add-data", f"{tray}:.",
          SCRIPT]
 
   proc = Popen( cmd )
   proc.communicate()
-  if os.path.isdir( dst ): shutil.rmtree( dst )
-  shutil.move( src, appdir )
-  shutil.rmtree( blddir )
-
+  if proc.returncode == 0:
+    if os.path.isdir( dst ): shutil.rmtree( dst )
+    shutil.move( src, appdir )
+    shutil.rmtree( blddir )
+  else:
+    print('Failed to build app')
 
 # Move the app into place in the user's application directory
 
