@@ -12,7 +12,8 @@ EMAIL   = "krwodzicki@gmail.com"
 
 SCRIPT  = os.path.join( "bin", NAME )
 
-REQUIRE = ["PySide6"]
+REQUIRE = ["PyQt5"]
+#REQUIRE = ["PySide6"]
 
 if sys.platform == 'darwin': REQUIRE.append( 'pyinstaller' )
 

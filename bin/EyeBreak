@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
-from PySide6.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication
+#from PySide6.QtWidgets import QApplication
 from EyeBreak.EyeBreakMain import EyeBreakTray
 
 QApplication.setQuitOnLastWindowClosed(False)
