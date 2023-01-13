@@ -5,7 +5,7 @@ from subprocess      import check_call, Popen, STDOUT, DEVNULL
 
 from PyQt5.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QLabel, QAction
 from PyQt5.QtGui     import QIcon, QFont
-from PyQt5.QtCore    import pyqtSignal, pyqtSlot, Qt, QThread, QTimer
+from PyQt5.QtCore    import Qt, QThread, QTimer
 
 #from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QLabel
 #from PySide6.QtGui     import QIcon, QFont, QAction
@@ -43,9 +43,7 @@ def getAttachedDisplays( ):
 
 class EyeBreakLabel( QLabel ):
 
-  showSig = pyqtSignal()                                       # Signal for showing window(s)
-  hideSig = pyqtSignal()                                       # Signal for hiding window(s)
-  def __init__(self, x, y, text = None):
+  def __init__(self, x, y, text=None, delay=20.0):
     '''
     Inputs:
        x  : x coordinate of label location
@@ -63,18 +61,13 @@ class EyeBreakLabel( QLabel ):
     self.setWindowFlags( Qt.FramelessWindowHint )
     self.setWindowFlags( Qt.WindowStaysOnTopHint )
     self.move( x, y )                                                          # Move label to given screen
-    
-    self.showSig.connect(self.__show)                                          # Connect __showSig signal to the __show method
-    self.hideSig.connect(self.__hide)                                          # Connect __hideSig signal to the __hide method
-  ##########################################
-  @pyqtSlot()
-  def __show(self, *args):
+
+    self.timer = QTimer()
+    self.timer.setSingleShot(True) 
+    self.timer.timeout.connect( self.close )
+    self.timer.start( delay*1000 )
+     
     self.showMaximized()
-  ##########################################
-  @pyqtSlot()
-  def __hide(self, *args):
-#    self.showNormal()
-    self.close()
 
 #################################################################
 class EyeBreakTray( QSystemTrayIcon ):
@@ -141,9 +134,11 @@ class EyeBreakTray( QSystemTrayIcon ):
     # Set context menu for the sytem tray application
     self.setContextMenu(self.menu)
 
-    self.timer = QTimer()
-    self.timer.timeout.connect( self.toggleDisplay )
-    self.timer.start(1000)
+    self.timers = [QTimer(), QTimer()]
+    self.timers[0].timeout.connect( self.toggleDisplay )
+    self.timers[0].start(500)
+    self.timers[1].timeout.connect( self.check_displays )
+    self.timers[1].start(2000)
 
     self.show()
 
@@ -211,22 +206,15 @@ class EyeBreakTray( QSystemTrayIcon ):
   def check_displays(self):
     """Method for creating EyeBreakLabel for each display"""
  
-    labels  = []
     current = {}
-
     for sName, sObj in getAttachedDisplays():
       current[sName] = sObj
       if sName not in self.__attachedDisplays: 
         self._addDisplay( {sName : True}  )
-      if self.__attachedDisplays[sName].isChecked():
-        x, y, height, width = sObj.availableGeometry().getRect()              # Get geometry of the ith screen
-        labels.append( EyeBreakLabel(x, y, text = self.__text ) )             # Create a new label and append to the labels attribute
 
     for sName in list( self.__attachedDisplays.keys() ):
       if sName not in current:
         self._removeDisplay( sName )
-
-    return labels
 
   def updateTime( self ):
     """Update time label in the system tray menu"""
@@ -237,17 +225,30 @@ class EyeBreakTray( QSystemTrayIcon ):
     prefix = 'Break in - ' if self.i == 0 else 'Resume in - '                   # Prefixed based on value of i
     self.remain.setText( prefix + f"{minute:02.0f}:{second:02.0f}" )            # Update the text
 
+ 
+  def showBreakWindows(self):
+
+    labels = []
+    for sName, sObj in getAttachedDisplays():
+      action = self.__attachedDisplays.get( sName, None )
+      if action is None: continue
+      if not action.isChecked(): continue
+ 
+      x, y, height, width = sObj.availableGeometry().getRect()              # Get geometry of the ith screen
+      labels.append( 
+        EyeBreakLabel(x, y, text=self.__text, delay=self.delay[1]) 
+      )             # Create a new label and append to the labels attribute
+    return labels
+ 
 #######################################################
   def toggleDisplay(self, *args):
     """Run to toggle banners on display for break"""
 
     if (time.monotonic()-self.t0) >= self.delay[ self.i ]:                                  # If difference between current time and t0 >= delay time
       if self.__visible:                                                      # If the window is currently visible
-        for label in self.labels: label.hideSig.emit()                       # Hide the window
         Popen( cmd, stdout = DEVNULL, stderr = STDOUT )                      # Play notification sound
       else:                                                                   # Else, it is hidden so
-        self.labels = self.check_displays()
-        for label in self.labels: label.showSig.emit()                       # Hide the window 
+        self.labels = self.showBreakWindows()
       self.__visible = not self.__visible    
       self.t0 = time.monotonic()                                                       # Update t0
       self.i  = (self.i + 1) % 2                                                       # Increment i ensuring it is always either 0 or 1
@@ -256,7 +257,8 @@ class EyeBreakTray( QSystemTrayIcon ):
   #######################################################  
   def __exit_gracefully(self, *args):
     self.__running = False
-    self.timer.stop()
+    for timer in self.timers:
+      timer.stop()
     QApplication.quit()
 
 if __name__ == "__main__":
