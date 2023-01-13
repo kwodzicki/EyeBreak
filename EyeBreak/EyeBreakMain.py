@@ -24,7 +24,25 @@ else:
 #  cmd = ['afplay', 'C:\\Windows\\Media\\notify.wav']
 #  powershell -c (New-Object Media.SoundPlayer "C:\Windows\Media\notify.wav").PlaySync()
 
+def getDisplayName( display ):
+  """
+   Arguments:
+    display : This is a display object returned from call to QApplication.screens()
+
+  """
+
+  return f"{display.model()} ({display.name()})"
+
+def getAttachedDisplays( ):
+  """
+  Yeild displays and formatted names of currently attached displays 
+  """
+
+  for display in QApplication.screens():
+    yield getDisplayName( display ), display
+
 class EyeBreakLabel( QLabel ):
+
   showSig = pyqtSignal()                                       # Signal for showing window(s)
   hideSig = pyqtSignal()                                       # Signal for hiding window(s)
   def __init__(self, x, y, text = None):
@@ -58,7 +76,6 @@ class EyeBreakLabel( QLabel ):
 #    self.showNormal()
     self.close()
 
-
 #################################################################
 class EyeBreakTray( QSystemTrayIcon ):
   SETTINGS = os.path.join( os.path.expanduser('~'), '.eyebreak' )
@@ -76,9 +93,9 @@ class EyeBreakTray( QSystemTrayIcon ):
       icon = sys._MEIPASS
     except:
       icon = os.path.dirname( os.path.realpath(__file__) )
-    icon = os.path.join( icon, 'trayicon.jpg' )
+    #icon = os.path.join( icon, 'trayicon.jpg' )
 
-    #icon = os.path.join( icon, 'trayicon.png' )
+    icon = os.path.join( icon, 'trayicon.png' )
     self.setIcon( QIcon(icon) )
     self.setVisible(True)
 
@@ -87,16 +104,17 @@ class EyeBreakTray( QSystemTrayIcon ):
 
     self.__text    = text
     self.__debug   = debug
-    self.__running = True                                                   # Initialize threading event
+    self.__running = True                                                     # Initialize threading event
     self.__visible = False
-    self.screens   = {}                                       # Iterate over the number of screens
+    self.__displaySettings = {}                                               # Store settings for all previously/currently attached screens
+    self.__attachedDisplays = {}                                               # Dictionary to hold information about currently attached
     
-    if self.__debug:                                                            # If debug was set
+    if self.__debug:                                                          # If debug was set
       self.delay = [5] * 2                                                          # Set delays to 5 seconds each
     else:                                                                       # Else
       self.delay = [20 * 60, 20]                                                    # Set delays to 20 minutes and 20 seconds
     self.i  = 0                                                                     # Set index to 0
-    self.t0 = time.time()                                                           # Get current time
+    self.t0 = time.monotonic()                                                           # Get current time
 
     self.menu     = QMenu()
 
@@ -107,11 +125,12 @@ class EyeBreakTray( QSystemTrayIcon ):
 
     # Display menu
     self.menu.addSeparator()
-    self.dMenu    = self.menu.addMenu( 'Displays' )
-    self.settings = self._loadSettings()
-    for screen in QApplication.screens():
-      screen = self._screenName( screen )
-      self._addScreen( {screen : self.settings.get( screen, True )} )
+    self.dMenu = self.menu.addMenu( 'Displays' )
+    self.__displaySettings = self._loadSettings()
+    for displayName, _ in getAttachedDisplays( ):
+      self._addDisplay( 
+        {displayName : self.__displaySettings.get( displayName, True )}
+       )
 
     # Quit option
     self.menu.addSeparator()
@@ -123,12 +142,12 @@ class EyeBreakTray( QSystemTrayIcon ):
     self.setContextMenu(self.menu)
 
     self.timer = QTimer()
-    self.timer.timeout.connect( self.toggleScreen )
-    self.timer.start(500)
+    self.timer.timeout.connect( self.toggleDisplay )
+    self.timer.start(1000)
 
     self.show()
 
-  def _addScreen( self, screens ):
+  def _addDisplay( self, displays ):
     """
     Add a display to the Display submenu
 
@@ -136,8 +155,8 @@ class EyeBreakTray( QSystemTrayIcon ):
     and add it to the Displays submenu of the system tray.
 
     Arguments:
-      screen : This is can be either the name of the screen (as generated 
-        by the _screenName method) or a screen object returned from call 
+      displays : This is can be either the name of the display (as generated 
+        by the getDisplayName function) or a display  object returned from call 
         to QApplication.screens()
 
     Returns:
@@ -145,39 +164,27 @@ class EyeBreakTray( QSystemTrayIcon ):
 
     """
 
-    for screen, state in screens.items():
-      if not isinstance( screen, str ):
-        screen = self._screenName( screen )                                        # Genearte name for display 
-      if screen not in self.screens:
-        action = QAction( screen, checkable = True )                                 # Create a new, checkable, action with name of display 
-        action.triggered.connect( self._saveSettings )                              # Set method to run when state of the checkbox changes
-        self.dMenu.addAction( action )                                              # Add the action to the displays submenu
-        self.screens[screen] = action                                               # Add QAction handle to the displays dictionary
-        self.screens[screen].setChecked( state )                                                  # Then set checked state
+    for display, state in displays.items():
+      if display in self.__attachedDisplays: continue
 
-  def _removeDisplay( self, screen ):
+      action = QAction( display, checkable = True )                            # Create a new, checkable, action with name of display 
+      action.triggered.connect( self._saveSettings )                          # Set method to run when state of the checkbox changes
+      self.dMenu.addAction( action )                                          # Add the action to the displays submenu
+      self.__attachedDisplays[display] = action                                 # Add QAction handle to the displays dictionary
+      self.__attachedDisplays[display].setChecked( state )                      # Then set checked state
+
+  def _removeDisplay( self, display ):
     """
     Remove a display from the displays submenu
 
     Arguments:
-      screen : This is a screen object returned from call to QApplication.screens()
+      display : This is a display object returned from call to QApplication.screens()
 
     """
 
-    screen = screen if isinstance( screen, str ) else self._screenName( screen )
-
-    if screen in self.screens:
-      self.dMenu.removeAction( self.screens[screen] )
-
-  def _screenName( self, screen ):
-    """Generate consistent name for given display
-
-    Arguments:
-      screen : This is a screen object returned from call to QApplication.screens()
-
-    """
-
-    return f"{screen.model()} ({screen.name()})"
+    action = self.__attachedDisplays.pop( display , None )
+    if action is not None:
+      self.dMenu.removeAction( action )
 
   def _loadSettings( self ):
     """Load settings from the settings json file and return dict"""
@@ -191,57 +198,58 @@ class EyeBreakTray( QSystemTrayIcon ):
   def _saveSettings( self, *args, **kwargs ):
     """Save settings to the settings json file"""
     with self.LOCK:
-      for screen, info in self.screens.items():                                 # Iterate over currently available displays/settings
-        self.settings[screen] = info.isChecked()                                # Update/add settings for given display
+      for displayName, action in self.__attachedDisplays.items():              # Iterate over currently available displays/settings
+        self.__displaySettings[displayName] = action.isChecked()               # Update/add settings for given display
   
-      with open( self.SETTINGS, 'w') as fid:                                    # Open settings file for writing
-        json.dump( self.settings, fid )                                         # Write information
+      with open( self.SETTINGS, 'w') as fid:                                  # Open settings file for writing
+        json.dump( self.__displaySettings, fid )                              # Write information
   
       if sys.platform == 'win32':
         check_call( ['attrib', '+H', self.SETTINGS] )
 
   #####################################################
-  def check_screens(self):
-    """Method for creating EyeBreakLabel for each screen"""
+  def check_displays(self):
+    """Method for creating EyeBreakLabel for each display"""
  
     labels  = []
-    screens = []
-    for screen in QApplication.screens():                                       # Iterate over the number of screens
-      sName = self._screenName( screen )
-      screens.append( sName )
-      self._addScreen( {sName : True}  )
-      if self.screens[sName].isChecked():
-        x, y, height, width = screen.availableGeometry().getRect()                # Get geometry of the ith screen
-        labels.append( EyeBreakLabel(x, y, text = self.__text ) )         # Create a new label and append to the labels attribute
+    current = {}
 
-    for screen in self.screens:                                                # Iterate over available screens
-      if screen not in screens:                                                  # If
-        self._removeDisplay( screen )
+    for sName, sObj in getAttachedDisplays():
+      current[sName] = sObj
+      if sName not in self.__attachedDisplays: 
+        self._addDisplay( {sName : True}  )
+      if self.__attachedDisplays[sName].isChecked():
+        x, y, height, width = sObj.availableGeometry().getRect()              # Get geometry of the ith screen
+        labels.append( EyeBreakLabel(x, y, text = self.__text ) )             # Create a new label and append to the labels attribute
+
+    for sName in list( self.__attachedDisplays.keys() ):
+      if sName not in current:
+        self._removeDisplay( sName )
 
     return labels
 
   def updateTime( self ):
     """Update time label in the system tray menu"""
 
-    remain = self.delay[ self.i ] - (time.time()-self.t0)                       # Get remaining time for given delay
+    remain = self.delay[ self.i ] - (time.monotonic()-self.t0)                       # Get remaining time for given delay
     minute = remain // 60                                                       # Determine minutes
-    second = remain - minute*60                                                 # Determine seconds
+    second = remain % 60
     prefix = 'Break in - ' if self.i == 0 else 'Resume in - '                   # Prefixed based on value of i
     self.remain.setText( prefix + f"{minute:02.0f}:{second:02.0f}" )            # Update the text
 
 #######################################################
-  def toggleScreen(self, *args):
-    """Run to toggle banners on screen for break"""
+  def toggleDisplay(self, *args):
+    """Run to toggle banners on display for break"""
 
-    if (time.time()-self.t0) >= self.delay[ self.i ]:                                  # If difference between current time and t0 >= delay time
+    if (time.monotonic()-self.t0) >= self.delay[ self.i ]:                                  # If difference between current time and t0 >= delay time
       if self.__visible:                                                      # If the window is currently visible
         for label in self.labels: label.hideSig.emit()                       # Hide the window
         Popen( cmd, stdout = DEVNULL, stderr = STDOUT )                      # Play notification sound
       else:                                                                   # Else, it is hidden so
-        self.labels = self.check_screens()
+        self.labels = self.check_displays()
         for label in self.labels: label.showSig.emit()                       # Hide the window 
       self.__visible = not self.__visible    
-      self.t0 = time.time()                                                       # Update t0
+      self.t0 = time.monotonic()                                                       # Update t0
       self.i  = (self.i + 1) % 2                                                       # Increment i ensuring it is always either 0 or 1
     self.updateTime()
 

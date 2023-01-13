@@ -7,6 +7,5 @@ from EyeBreak.EyeBreakMain import EyeBreakTray
 QApplication.setQuitOnLastWindowClosed(False)
 app  = QApplication(sys.argv)
 inst = EyeBreakTray( app, debug = len(sys.argv) > 1 )
-#inst = EyeBreakTray( app, debug = True )
 res  = app.exec()
 sys.exit( res )

@@ -12,6 +12,7 @@ EMAIL   = "krwodzicki@gmail.com"
 
 SCRIPT  = os.path.join( "bin", NAME )
 
+ICON    = 'trayicon.png'
 REQUIRE = ["PyQt5"]
 #REQUIRE = ["PySide6"]
 
@@ -24,7 +25,7 @@ with open(ver_path, 'r') as ver_file:
 
 def darwin_install():
   topdir = os.path.dirname( os.path.abspath( __file__ ) )
-  tray   = os.path.join( topdir, NAME, 'trayicon.jpg' )
+  tray   = os.path.join( topdir, NAME, ICON )
   blddir = "/tmp/2020_build"
   wrkdir = os.path.join( blddir, "work" )
   dstdir = os.path.join( blddir, "dist" )
@@ -67,7 +68,7 @@ setup(
   version              = main_ns['__version__'],
   include_package_data = True,
   packages             = find_packages(),
-  package_data         = {'' : ['trayicon.jpg']},
+  package_data         = {'' : [ ICON ]},
   install_requires     = REQUIRE,
   scripts              = [SCRIPT],
   zip_safe             = False,
